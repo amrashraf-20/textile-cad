@@ -1,0 +1,19 @@
+# Keep the Docker build context small and secret-free.
+# The all-in-one image is built from the repository root (see deploy/free/Dockerfile).
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+
+**/node_modules
+**/dist
+**/build
+**/coverage.out
+**/*.log
+
+docs
+tests
+locales
+scripts
+*.md

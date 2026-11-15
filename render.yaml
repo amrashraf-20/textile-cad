@@ -1,0 +1,38 @@
+# Render Blueprint — one free web service (Docker) running the whole app.
+# Deploy: Render Dashboard -> New -> Blueprint -> pick this repository.
+#
+# Render provides no database on its permanent free tier (free Postgres expires
+# after 30 days), so DATABASE_URL points at a free Supabase / Neon Postgres.
+services:
+  - type: web
+    name: textile-cad
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./deploy/free/Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: API_PORT
+        value: "9000"
+      - key: AUTO_MIGRATE
+        value: "true"
+      - key: LOGIN_RATE_PER_MIN
+        value: "8"
+      # Postgres connection string (Supabase session pooler / Neon).
+      - key: DATABASE_URL
+        sync: false
+      # 32+ random bytes; generateValue keeps it out of the repository.
+      - key: JWT_SECRET
+        generateValue: true
+      # First deploy only — set to "false" after the admin account exists.
+      - key: RUN_SEED_ON_BOOT
+        value: "true"
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
