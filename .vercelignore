@@ -1,0 +1,10 @@
+.git
+.github
+node_modules
+frontend/node_modules
+frontend/dist
+backend/bin
+**/*.exe
+**/*.exe~
+docs
+tests

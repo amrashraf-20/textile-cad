@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -27,6 +28,7 @@ type Server struct {
 	tokens *auth.TokenService
 	ai     *ai.Client
 	log    *slog.Logger
+	static fs.FS
 }
 
 func New(cfg *config.Config, st *store.Store, tokens *auth.TokenService, log *slog.Logger) *Server {
@@ -132,6 +134,9 @@ func (s *Server) Router() http.Handler {
 			r.With(s.aiRateLimit(8)).Post("/ai/analyze-sample", s.aiAnalyze)
 		})
 	})
+	if s.static != nil {
+		r.NotFound(s.serveSPA)
+	}
 	return r
 }
 

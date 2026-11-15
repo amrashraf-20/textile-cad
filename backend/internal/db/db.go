@@ -3,6 +3,8 @@ package db
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -13,11 +15,15 @@ func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse database url: %w", err)
 	}
-	cfg.MaxConns = 20
-	cfg.MinConns = 2
-	cfg.MaxConnLifetime = time.Hour
-	cfg.MaxConnIdleTime = 15 * time.Minute
-	cfg.HealthCheckPeriod = 30 * time.Second
+	// Serverless hosts spin up many short-lived instances, so the pool has to be
+	// tunable; the defaults match a long-running single process.
+	cfg.MaxConns = int32(getInt("DB_MAX_CONNS", 20))
+	cfg.MinConns = int32(getInt("DB_MIN_CONNS", 2))
+	cfg.MaxConnLifetime = getDuration("DB_MAX_CONN_LIFETIME", time.Hour)
+	cfg.MaxConnIdleTime = getDuration("DB_MAX_CONN_IDLE_TIME", 15*time.Minute)
+	if period := getDuration("DB_HEALTHCHECK_PERIOD", 30*time.Second); period > 0 {
+		cfg.HealthCheckPeriod = period
+	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
@@ -44,4 +50,18 @@ func Open(ctx context.Context, url string) (*pgxpool.Pool, error) {
 		case <-time.After(1 * time.Second):
 		}
 	}
+}
+
+func getInt(k string, def int) int {
+	if v, err := strconv.Atoi(os.Getenv(k)); err == nil && v >= 0 {
+		return v
+	}
+	return def
+}
+
+func getDuration(k string, def time.Duration) time.Duration {
+	if v, err := time.ParseDuration(os.Getenv(k)); err == nil && v >= 0 {
+		return v
+	}
+	return def
 }

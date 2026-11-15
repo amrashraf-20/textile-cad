@@ -23,3 +23,8 @@ Thumbs.db
 *.log
 logs/
 public-url.txt
+webui/dist/*
+!webui/dist/index.html
+/server
+/server.exe
+*~

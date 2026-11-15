@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "go",
+  "buildCommand": "npm --prefix frontend ci --no-audit --no-fund && npm --prefix frontend run build && rm -rf webui/dist && cp -r frontend/dist webui/dist && go build -trimpath -ldflags '-s -w' -o server .",
+  "regions": ["dub1"]
+}
