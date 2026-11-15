@@ -11,6 +11,9 @@
 **/build
 **/coverage.out
 **/*.log
+**/bin
+**/*.exe
+**/*.exe~
 
 docs
 tests

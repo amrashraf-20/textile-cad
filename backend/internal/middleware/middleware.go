@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -40,7 +41,7 @@ func OriginCheck(allowed []string) func(http.Handler) http.Handler {
 			}
 			origin := r.Header.Get("Origin")
 			if origin != "" {
-				if _, ok := set[strings.TrimRight(origin, "/")]; !ok {
+				if _, ok := set[strings.TrimRight(origin, "/")]; !ok && !sameOrigin(origin, r) {
 					http.Error(w, `{"error":{"code":"origin_not_allowed","message":"Origin not allowed"}}`, http.StatusForbidden)
 					return
 				}
@@ -48,6 +49,25 @@ func OriginCheck(allowed []string) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// sameOrigin reports whether the request's Origin header points back at the
+// host that served it. Hosted deployments sit behind one public hostname, so a
+// same-origin POST is always safe even when CORS_ORIGINS is not configured.
+func sameOrigin(origin string, r *http.Request) bool {
+	u, err := url.Parse(origin)
+	if err != nil || u.Host == "" {
+		return false
+	}
+	host := u.Host
+	if h, _, ok := strings.Cut(host, ":"); ok && !strings.Contains(host, "]") {
+		host = h
+	}
+	reqHost := r.Host
+	if h, _, ok := strings.Cut(reqHost, ":"); ok && !strings.Contains(reqHost, "]") {
+		reqHost = h
+	}
+	return strings.EqualFold(host, reqHost)
 }
 
 type bucket struct {
